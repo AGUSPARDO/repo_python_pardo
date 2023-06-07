@@ -260,7 +260,7 @@ def calcular_jugadores_valor(jugadores, sub_clave, calcular_maximo=True):
         return "No se encontraron jugadores con estadísticas de {0}.".format(sub_clave)
     else:
         return "No se encontraron jugadores con estadísticas de {0}.".format(sub_clave)
-# 10, 11, 12, 15 
+# 10, 11, 12, 15, 18
 def mostrar_jugadores_valor(jugadores, sub_clave):
     '''
     Calcula y muestra los nombres de los jugadores con una estadística específica que supera un valor ingresado por el usuario.
@@ -285,6 +285,8 @@ def mostrar_jugadores_valor(jugadores, sub_clave):
             return jugadores_superiores
 
     return []
+
+#  16 CALCULA PROMEDIO EXCLUYENDO MENOR
 def calcular_promedio_excluyendo_menor(lista: list, clave: str) -> float:
     '''
     Calcula y muestra el promedio de una estadística específica de los jugadores del equipo,
@@ -297,17 +299,180 @@ def calcular_promedio_excluyendo_menor(lista: list, clave: str) -> float:
     Retorna:
         float: El promedio de la estadística especificada, excluyendo al jugador con la menor cantidad.
     '''
-    lista_ordenada = quick_sort(lista, clave, flag_orden= True)
+    lista_ordenada = quick_sort(lista, clave, flag_orden=True)
 
-    lista_vacia = []
+    if len(lista_ordenada) <= 1:
+        return None
+
+    lista_excluida_menor = lista_ordenada[1:]
+
+    promedio = calcular_promedio(lista_excluida_menor, clave)
+
+    return promedio
+
+#CALCULAR JUGADOR CON MAYOR CANTIDAD DE LOGROS
+
+def jugador_con_mas_logros(jugadores:list):
+    '''
+    Calcula el jugador con la mayor cantidad de logros en base a una lista de jugadores.
+
+    Parámetros:
+    - jugadores (list): Una lista de diccionarios que representan a los jugadores, donde cada jugador tiene un nombre y una lista de logros.
+
+    Retorna:
+    - str: El nombre del jugador con la mayor cantidad de logros. Si la lista de jugadores está vacía, retorna None.
+    '''
+    jugador_con_mas_logros = None
+    cantidad_maxima_logros = 0
+
+    for jugador in jugadores:
+        cantidad_logros = len(jugador["logros"])
+        if cantidad_logros > cantidad_maxima_logros:
+            cantidad_maxima_logros = cantidad_logros
+            jugador_con_mas_logros = jugador["nombre"]
+
+    return jugador_con_mas_logros
+#21 CALCULAR LOS RANKINGS
+def calcular_posiciones_rankings(lista) -> None:
+
+    '''
+    Calcula los rankings de puntos, rebotes, asistencias y robos para una lista de jugadores y guarda los resultados
+    en un archivo CSV.
+    :param lista: Lista de jugadores con sus estadísticas.
+    :return: None
+    '''
+    rankings = {
+        "Puntos": [],
+        "Rebotes": [],
+        "Asistencias": [],
+        "Robos": []
+    }
+
+    for jugador in lista:
+        nombre = jugador["nombre"]
+        puntos = jugador["estadisticas"]["puntos_totales"]
+        rebotes = jugador["estadisticas"]["rebotes_totales"]
+        asistencias = jugador["estadisticas"]["asistencias_totales"]
+        robos = jugador["estadisticas"]["robos_totales"]
+
+        rankings["Puntos"].append((nombre, puntos))
+        rankings["Rebotes"].append((nombre, rebotes))
+        rankings["Asistencias"].append((nombre, asistencias))
+        rankings["Robos"].append((nombre, robos))
+
+    # Ordenar los rankings en base a los valores
+    for ranking in rankings.values():
+        ranking.sort(key=lambda x: x[1], reverse=True)
+
+    # Crear archivo CSV y escribir los rankings
+    with open("rankings.csv", "w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["Puntos", "Rebotes", "Asistencias", "Robos"])
+
+        for i in range(len(lista)):
+            row = [rankings["Puntos"][i][0], rankings["Rebotes"][i][0], rankings["Asistencias"][i][0], rankings["Robos"][i][0]]
+            writer.writerow(row)
+
+    print("Archivo CSV exportado exitosamente.")
+# 22 Contar jugadores por posición
+def contar_jugadores_por_posicion(lista):
+    '''
+    Esta función cuenta la cantidad de jugadores por posición.
     
-    for jugador in range (1,len(lista_ordenada)):
-        lista_vacia.append(lista_ordenada[jugador])
+    Parámetros:
+        - lista: Lista de jugadores.
         
-    print(lista_vacia)
-    #promedio = calcular_promedio(lista_ordenada, clave)
+    Retorna:
+        Un diccionario donde las claves son las posiciones y los valores son la cantidad de jugadores que tienen esa posición.
+    '''
+    jugadores_por_posicion = {}
 
-    return None
+    for jugador in lista:
+        posicion = jugador["posicion"]
+        if posicion in jugadores_por_posicion:
+            jugadores_por_posicion[posicion] += 1
+        else:
+            jugadores_por_posicion[posicion] = 1
+
+    return jugadores_por_posicion
+
+
+# 23 Obtener cantidad de jugadores por All-Star
+def obtener_cantidad_jugadores_por_all_star(jugador):
+    '''
+    Esta función obtiene la cantidad de jugadores que han sido seleccionados como All-Star.
+    
+    Parámetros:
+        - jugador: Jugador del cual se desea obtener la cantidad de All-Star.
+        
+    Retorna:
+        La cantidad de veces que el jugador ha sido seleccionado como All-Star.
+    '''
+    for logro in jugador["logros"]:
+        if "All-Star" in logro:
+            cantidad_all_star = logro.split(" ")[0]
+            cantidad_all_star = int(cantidad_all_star)
+            return cantidad_all_star 
+    return 0
+
+
+# 24 Obtener mejores estadísticas por categoría
+def obtener_mejores_estadisticas(lista):
+    '''
+    Esta función obtiene los jugadores con las mejores estadísticas en cada categoría.
+    
+    Parámetros:
+        - lista: Lista de jugadores con sus estadísticas.
+        
+    Retorna:
+        None. Imprime por pantalla el nombre del jugador, la categoría y el valor de la estadística correspondiente.
+    '''
+    mejores_estadisticas = {}
+
+    for jugador in lista:
+        nombre = jugador["nombre"]
+        estadisticas = jugador["estadisticas"]
+
+        for categoria, valor in estadisticas.items():
+            if categoria not in mejores_estadisticas or valor > mejores_estadisticas[categoria][1]:
+                mejores_estadisticas[categoria] = (nombre, valor)
+
+    for categoria, mejor_jugador in mejores_estadisticas.items():
+        nombre_jugador = mejor_jugador[0]
+        valor_estadistica = mejor_jugador[1]
+        print("Mejor '{}': {} ({})".format(categoria, nombre_jugador, valor_estadistica))
+
+
+# 25 Obtener mejores estadísticas generales
+def obtener_mejores_estadisticas_totales(lista):
+    '''
+    Esta función obtiene el jugador con las mejores estadísticas generales.
+    
+    Parámetros:
+        - lista: Lista de jugadores con sus estadísticas.
+        
+    Retorna:
+        None. Imprime por pantalla el nombre del jugador y sus estadísticas.
+    '''
+    mejor_jugador = None
+
+    for jugador in lista:
+        nombre = jugador["nombre"]
+        estadisticas = jugador["estadisticas"]
+
+        if mejor_jugador is None or sum(estadisticas.values()) > sum(mejor_jugador["estadisticas"].values()):
+            mejor_jugador = jugador
+
+    if mejor_jugador is not None:
+        nombre_jugador = mejor_jugador["nombre"]
+        print("Mejor jugador: {}".format(nombre_jugador))
+        print("Estadísticas:")
+        for categoria, valor in mejor_jugador["estadisticas"].items():
+            print("{}: {}".format(categoria, valor))
+    else:
+        print("No se encontraron jugadores en la lista.")
+
+
 while True:
         print("Seleccione una opción:")
         print("1. Mostrar la lista de todos los jugadores del Dream Team")
@@ -331,7 +496,10 @@ while True:
         print("19. Calcula y muestra el jugador con la mayor cantidad de temporadas jugadas")
         print("20. Ingrese un valor para mostrar los jugadores, ordenados por posición en la cancha, que hayan tenido un porcentaje de tiros de campo superior a ese valor")
         print("21. Calcula de cada jugador cuál es su posición en los siguientes rankings: - Puntos - Rebotes - Asistencias - Robos y los exporta a CSV")
-        print("22. Salir")
+        print("22. Determinar la cantidad de jugadores que hay por cada posición.")
+        print("23. Mostrar la lista de jugadores ordenadas por la cantidad de All-Star de forma descendente")
+        print("24. Determinar qué jugador tiene las mejores estadísticas en cada valor")
+        print("25. Determinar qué jugador tiene las mejores estadísticas de todos")
 
         option = input()
     
@@ -384,22 +552,44 @@ while True:
                 print(resultado)
             case "15":
                 print(mostrar_jugadores_valor(data_dream_lista, "porcentaje_tiros_libres"))
-                pass
             case "16":
-                promedio_excluyendo_menor = calcular_promedio_excluyendo_menor(data_dream_lista, "promedio_puntos_por_partido")
-                print("Promedio de puntos por partido del equipo excluyendo al jugador con la menor cantidad:")
-                print(promedio_excluyendo_menor)
+                promedio = calcular_promedio_excluyendo_menor(data_dream_lista, "promedio_puntos_por_partido")
+                if promedio is not None:
+                    print("Promedio de puntos por partido del equipo (excluyendo al jugador con la menor cantidad de puntos):", promedio)
+                else:
+                    print("No hay suficientes datos para calcular el promedio.")
             case "17":
-                pass
+                jugador_mas_logros = jugador_con_mas_logros(data_dream_lista)
+                print("El jugador con la mayor cantidad de logros es: {0}".format(jugador_mas_logros))
             case "18":
-                pass
+                print(mostrar_jugadores_valor(data_dream_lista, "porcentaje_tiros_triples"))  
             case "19":
-                pass
+                print(calcular_jugadores_valor(data_dream_lista, "temporadas", calcular_maximo=True))
             case "20":
-                pass
+                jugadores_superiores = mostrar_jugadores_valor(data_dream_lista, "porcentaje_tiros_de_campo")
+                print(jugadores_superiores)
             case "21":
-                pass
+                calcular_posiciones_rankings(data_dream_lista)
             case "22":
+                jugadores_por_posicion = contar_jugadores_por_posicion(data_dream_lista)
+                print("Jugadores por posición:")
+                for posicion, cantidad in jugadores_por_posicion.items():
+                    print("{}: {}".format(posicion, cantidad))
+                print()
+
+            case "23":
+                jugadores_ordenados = sorted(data_dream_lista, key=obtener_cantidad_jugadores_por_all_star, reverse=True)
+                for jugador in jugadores_ordenados:
+                    cantidad_all_star = obtener_cantidad_jugadores_por_all_star(jugador)
+                    print("Nombre: {}".format(jugador['nombre']))
+                    print("All-Star: {}".format(cantidad_all_star))
+            case "24":
+                obtener_mejores_estadisticas(data_dream_lista)
+                print()
+            case "25":
+                obtener_mejores_estadisticas_totales(data_dream_lista)
+                print()
+            case "26":
                 print("Saliendo del programa...")
                 pass
             case _:
